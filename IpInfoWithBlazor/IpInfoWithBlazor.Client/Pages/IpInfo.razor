@@ -1,0 +1,77 @@
+﻿@page "/ipinfo"
+
+@using IpInfoWithBlazor.Client.Model
+@inject HttpClient HttpClient
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th scope="col">Ip</th>
+                <th scope="col">City</th>
+                <th scope="col">Region</th>
+                <th scope="col">Country</th>
+                <th scope="col">Log</th>
+                <th scope="col">Org</th>
+                <th scope="col">Postal</th>
+                <th scope="col">TimeZone</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (model is not null)
+            {
+                <tr>
+                    <th scope="row">
+                        @model.Ip
+                    </th>
+                    <td>
+                        @model.City
+                    </td>
+                    <td>
+                        @model.Region
+                    </td>
+                    <td>
+                        @model.Country
+                    </td>
+                    <td>
+                        @model.Log
+                    </td>
+                    <td>
+                        @model.Org
+                    </td>
+                    <td>
+                        @model.Postal
+                    </td>
+                    <td>
+                        @model.TimeZone
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+@code {
+    private IpModel model { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = "";
+        var uri = new Uri("https://ipinfo.io/ip");
+        HttpResponseMessage getIp = await HttpClient.GetAsync(uri);
+        if (getIp.IsSuccessStatusCode)
+        {
+            string ip = await getIp.Content.ReadAsStringAsync();
+            var newUri = new Uri("https://ipinfo.io/" + ip + "?token=" + token);
+            HttpResponseMessage getIpModel = await HttpClient.GetAsync(newUri);
+            if (getIpModel.IsSuccessStatusCode)
+            {
+                var item = await getIpModel.Content.ReadFromJsonAsync<IpModel>();
+                if (item is not null)
+                {
+                    model = item;
+                }
+            }
+        }
+    }
+}
+

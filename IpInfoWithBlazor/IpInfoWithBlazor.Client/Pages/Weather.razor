@@ -1,0 +1,90 @@
+﻿@page "/weather"
+@using IpInfoWithBlazor.Client.Model
+@inject HttpClient HttpClient
+@inject IJSRuntime JS
+
+<PageTitle>Weather</PageTitle>
+
+<h1>Weather</h1>
+
+<div class="input-group mb-3 d-flex justify-content-center" style="margin-top: 50px;">
+    <input type="text" @bind="@city" class="form-control" placeholder="Search Country" aria-label="Search Country">
+    <button class="btn btn-outline-secondary" @onclick="() => SearchCityWeather(city)">Click me</button>
+</div>
+
+@if (weatherData != null)
+{
+    <div class="d-flex justify-content-center align-items-center flex-wrap" style="min-height: 60vh; margin-top: 30px;">
+        <div class="card mb-3 w-100" style="max-width: 720px;">
+            <div class="row g-0 d-flex align-items-stretch">
+                <div class="col-md-4 d-flex justify-content-center align-items-center">
+                    <img src="@weatherConditionLink" class="img-fluid rounded-start" alt="..." style="max-height: 100%; margin: 20px;">
+                </div>
+                <div class="col-md-8 d-flex flex-column">
+                    <div class="card-body flex-grow-1">
+                        <h5 class="card-title">@weatherData.Location.Name</h5>
+                        <p class="card-text">@weatherData.Current.TempC °C - @weatherCondition</p>
+                        <p class="card-text"><small class="text-body-secondary">@weatherData.Current.LastUpdated</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+}
+
+
+
+
+
+@code {
+    private string city { get; set; } = "";
+    private WeatherData? weatherData { get; set; }
+    private string weatherCondition { get; set; } = "";
+    private string weatherConditionLink { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        string apiKey = "";
+        var uri = new Uri("https://api.weatherapi.com/v1/current.json?key=" + apiKey + "&q=Corum");
+        HttpResponseMessage data = await HttpClient.GetAsync(uri);
+        if (data.IsSuccessStatusCode)
+        {
+            var item = await data.Content.ReadAsStringAsync();
+            var settings = new JsonSerializerSettings
+                {
+                    Culture = new CultureInfo("en-US")
+                };
+            if (item is not null)
+            {
+                var getData = JsonConvert.DeserializeObject<WeatherData>(item, settings);
+                weatherData = getData;
+                weatherCondition = WeatherConditions.Conditions.Where(b => b.Code == Convert.ToInt32(weatherData.Current.Condition.Code)).FirstOrDefault().Day;
+                weatherConditionLink = "https://" + weatherData.Current.Condition.Icon.Substring(2);
+            }
+        }
+    }
+
+    protected async Task SearchCityWeather(string city)
+    {
+        string apiKey = "";
+        var uri = new Uri("https://api.weatherapi.com/v1/current.json?key=" + apiKey + "&q=" + city);
+        HttpResponseMessage data = await HttpClient.GetAsync(uri);
+        if (data.IsSuccessStatusCode)
+        {
+            var item = await data.Content.ReadAsStringAsync();
+            var settings = new JsonSerializerSettings
+                {
+                    Culture = new CultureInfo("en-US")
+                };
+            if (item is not null)
+            {
+                var getData = JsonConvert.DeserializeObject<WeatherData>(item, settings);
+                weatherData = getData;
+                weatherCondition = WeatherConditions.Conditions.Where(b => b.Code == Convert.ToInt32(weatherData.Current.Condition.Code)).FirstOrDefault().Day;
+                weatherConditionLink = "https://" + weatherData.Current.Condition.Icon.Substring(2);
+            }
+        }
+
+    }
+}
